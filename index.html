@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>مجرة الذكاء | Galaxy AI</title>
+    
+    <!-- Fonts Collection -->
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&family=Amiri:ital,wght@0,400;0,700;1,400&family=Tajawal:wght@300;400;500;700;900&family=Lalezar&family=Reem+Kufi:wght@400;700&family=Chakra+Petch:wght@400;600&family=Russo+One&family=Playfair+Display:ital,wght@0,700;1,700&family=Outfit:wght@700&family=Baloo+Bhaijaan+2:wght@800&family=Noto+Sans+Symbols+2&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Tajawal', 'sans-serif'],
+                        cairo: ['Cairo', 'sans-serif'],
+                        amiri: ['Amiri', 'serif'],
+                        lalezar: ['Lalezar', 'cursive'],
+                        kufi: ['Reem Kufi', 'sans-serif'],
+                        hud: ['Chakra Petch', 'monospace'],
+                        scifi: ['Russo One', 'sans-serif'],
+                        playfair: ['Playfair Display', 'serif'],
+                        baloo: ['Baloo Bhaijaan 2', 'cursive'],
+                    },
+                    colors: {
+                        galaxy: { bg: '#09090b', card: '#18181b', accent: '#8b5cf6' },
+                        // App Specific Colors
+                        gold: '#D4AF37',
+                        neon: '#39FF14',
+                        noir: '#1a1a1a',
+                        mars: '#c1440e',
+                    },
+                    animation: {
+                        'float': 'float 6s ease-in-out infinite',
+                        'pulse-glow': 'pulseGlow 2s infinite',
+                        'spin-slow': 'spin 12s linear infinite',
+                    },
+                    keyframes: {
+                        float: { '0%, 100%': { transform: 'translateY(0)' }, '50%': { transform: 'translateY(-10px)' } },
+                        pulseGlow: { '0%, 100%': { opacity: 1, filter: 'brightness(100%)' }, '50%': { opacity: 0.8, filter: 'brightness(120%)' } }
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <script type="importmap">
+        {
+            "imports": {
+                "react": "https://esm.sh/react@18.2.0",
+                "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
+                "lucide-react": "https://esm.sh/lucide-react@0.263.1"
+            }
+        }
+    </script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <style>
+        body { background-color: #000; color: #fff; overflow-x: hidden; }
+        .app-icon { transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
+        .app-icon:active { transform: scale(0.9); }
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        
+        /* Starfield Animation */
+        .stars-bg {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(ellipse at bottom, #1B2735 0%, #090A0F 100%);
+            z-index: -1;
+        }
+        .star { position: absolute; background: white; border-radius: 50%; animation: twinkle var(--duration) infinite; }
+        @keyframes twinkle { 0%, 100% { opacity: 0.2; } 50% { opacity: 1; } }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel" data-type="module">
+        import React, { useState, useEffect } from 'react';
+        import { createRoot } from 'react-dom/client';
+        import { 
+            Grid, Settings, ArrowRight, Star, 
+            Feather, BookOpen, ChefHat, Dumbbell, Moon, Search, 
+            Languages, Lightbulb, FlaskConical, Gavel, ShieldAlert, 
+            Globe, Palette, Flame, Rocket, Radio, Smile, Heart, Laugh
+        } from 'lucide-react';
+
+        // --- Apps Configuration ---
+        const APPS = [
+            // Tools
+            { id: 'poetry', name: 'الذيب', icon: Feather, color: 'from-yellow-600 to-yellow-800', category: 'tools', desc: 'ناظم القصائد' },
+            { id: 'translator', name: 'المترجم', icon: Languages, color: 'from-teal-500 to-emerald-700', category: 'tools', desc: 'اللهجات العربية' },
+            { id: 'simplify', name: 'بسطها لي', icon: Lightbulb, color: 'from-yellow-400 to-orange-500', category: 'tools', desc: 'المعلم الذكي' },
+            { id: 'brand', name: 'براند', icon: Palette, color: 'from-indigo-500 to-purple-600', category: 'tools', desc: 'صانع الهوية' },
+            { id: 'cooking', name: 'طباخ الدار', icon: ChefHat, color: 'from-orange-500 to-red-600', category: 'tools', desc: 'وصفات ذكية' },
+            { id: 'fitness', name: 'الكوتش', icon: Dumbbell, color: 'from-green-500 to-lime-600', category: 'tools', desc: 'مدرب شخصي' },
+            
+            // Advisors
+            { id: 'dreams', name: 'رؤيا', icon: Moon, color: 'from-indigo-900 to-purple-900', category: 'advisor', desc: 'مفسر الأحلام' },
+            { id: 'mood', name: 'الصيدلية', icon: FlaskConical, color: 'from-purple-500 to-pink-600', category: 'advisor', desc: 'عطار المشاعر' },
+            { id: 'grandma', name: 'الجدة', icon: Heart, color: 'from-red-800 to-amber-900', category: 'advisor', desc: 'نصائح وحكم' },
+            { id: 'charisma', name: 'كاريزما', icon: Star, color: 'from-amber-300 to-yellow-500', category: 'advisor', desc: 'فن الرد' },
+            
+            // Fun & Games
+            { id: 'roast', name: 'القاصف', icon: Flame, color: 'from-red-600 to-orange-600', category: 'fun', desc: 'قصف جبهات' },
+            { id: 'excuse', name: 'الأعذار', icon: ShieldAlert, color: 'from-blue-500 to-cyan-500', category: 'fun', desc: 'منقذ الورطات' },
+            { id: 'emojify', name: 'ايموجي', icon: Smile, color: 'from-pink-400 to-rose-500', category: 'fun', desc: 'تحويل النص' },
+            { id: 'alien', name: 'فضائي', icon: Radio, color: 'from-green-400 to-emerald-600', category: 'fun', desc: 'مترجم كوني' },
+            { id: 'multiverse', name: 'موازي', icon: Globe, color: 'from-violet-600 to-fuchsia-600', category: 'fun', desc: 'من أنت؟' },
+            
+            // Games
+            { id: 'detective', name: 'المحقق', icon: Search, color: 'from-gray-700 to-gray-900', category: 'game', desc: 'حل الجريمة' },
+            { id: 'mars', name: 'المريخ', icon: Rocket, color: 'from-orange-700 to-red-900', category: 'game', desc: 'مستوطنة' },
+            { id: 'debate', name: 'المناظرة', icon: Gavel, color: 'from-amber-700 to-brown-900', category: 'game', desc: 'تحدي العقل' },
+            { id: 'wyr', name: 'لو خيروك', icon: ShieldAlert, color: 'from-blue-600 to-red-600', category: 'game', desc: 'نار وجليد' },
+            { id: 'laugh', name: 'الضحك', icon: Laugh, color: 'from-yellow-400 to-yellow-600', category: 'game', desc: 'تحدي الصمود' },
+            { id: 'history', name: 'تاريخ', icon: BookOpen, color: 'from-amber-100 to-amber-300', textColor: 'text-black', category: 'game', desc: 'تاريخ بديل' },
+        ];
+
+        // --- Generic AI Handler ---
+        const useAI = (apiKey) => {
+            const [loading, setLoading] = useState(false);
+            
+            const generate = async (prompt, isJson = false) => {
+                setLoading(true);
+                if (!apiKey) {
+                    await new Promise(r => setTimeout(r, 2000)); // Sim delay
+                    setLoading(false);
+                    return null; // Signal demo mode
+                }
+                try {
+                    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ 
+                            contents: [{ parts: [{ text: prompt }] }],
+                            generationConfig: isJson ? { responseMimeType: "application/json" } : undefined
+                        })
+                    });
+                    const data = await response.json();
+                    setLoading(false);
+                    const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+                    return isJson ? JSON.parse(text) : text;
+                } catch (e) {
+                    console.error(e);
+                    setLoading(false);
+                    return "Error";
+                }
+            };
+            return { loading, generate };
+        };
+
+        // --- Mini App Component Containers ---
+        // (Simplified versions of the logic, preserving the UI "Vibe")
+
+        const SimpleInputApp = ({ app, apiKey, promptTemplate, placeholder, buttonText, resultRenderer, styleClass, inputType = 'textarea' }) => {
+            const { loading, generate } = useAI(apiKey);
+            const [input, setInput] = useState('');
+            const [result, setResult] = useState(null);
+
+            const handleGo = async () => {
+                if (!input) return;
+                const res = await generate(promptTemplate.replace('{input}', input));
+                setResult(res || "Demo Result: This is a simulation because no API key was provided.");
+            };
+
+            return (
+                <div className={`h-full flex flex-col p-6 overflow-y-auto ${styleClass}`}>
+                    <div className="max-w-2xl mx-auto w-full flex-1 flex flex-col">
+                        <h2 className="text-3xl font-bold mb-6 text-center opacity-90">{app.name}</h2>
+                        <div className="bg-white/10 backdrop-blur-md p-6 rounded-2xl border border-white/20 shadow-xl">
+                            {inputType === 'textarea' ? (
+                                <textarea 
+                                    value={input} onChange={e => setInput(e.target.value)} 
+                                    placeholder={placeholder}
+                                    className="w-full h-32 bg-black/20 rounded-xl p-4 text-lg outline-none focus:ring-2 ring-white/30 resize-none mb-4"
+                                />
+                            ) : (
+                                <input 
+                                    value={input} onChange={e => setInput(e.target.value)} 
+                                    placeholder={placeholder}
+                                    className="w-full bg-black/20 rounded-xl p-4 text-lg outline-none focus:ring-2 ring-white/30 mb-4"
+                                />
+                            )}
+                            <button 
+                                onClick={handleGo} disabled={loading || !input}
+                                className="w-full py-4 bg-white/20 hover:bg-white/30 rounded-xl font-bold text-xl transition-all flex items-center justify-center gap-2"
+                            >
+                                {loading ? <span className="animate-spin">⏳</span> : buttonText}
+                            </button>
+                        </div>
+                        {result && (
+                            <div className="mt-8 bg-white/10 backdrop-blur-md p-6 rounded-2xl border border-white/20 animate-pulse-glow">
+                                {resultRenderer(result)}
+                            </div>
+                        )}
+                    </div>
+                </div>
+            );
+        };
+
+        // --- Main App ---
+
+        function App() {
+            const [activeAppId, setActiveAppId] = useState(null);
+            const [apiKey, setApiKey] = useState(() => localStorage.getItem('gemini_api_key') || '');
+            const [showSettings, setShowSettings] = useState(false);
+            
+            // Stars
+            const [stars, setStars] = useState([]);
+            useEffect(() => {
+                setStars(Array.from({ length: 50 }).map((_, i) => ({
+                    id: i, left: Math.random()*100, top: Math.random()*100, size: Math.random()*2+1, dur: Math.random()*3+2
+                })));
+            }, []);
+
+            const saveKey = (k) => { setApiKey(k); localStorage.setItem('gemini_api_key', k); };
+
+            const renderActiveApp = () => {
+                const app = APPS.find(a => a.id === activeAppId);
+                if (!app) return null;
+
+                // We define custom renderers for each app vibe
+                // This simulates the unique apps by injecting styles
+                
+                if (app.id === 'poetry') { // Al-Dheeb
+                    return <div className="h-full bg-neutral-900 text-yellow-500 font-amiri">
+                        <SimpleInputApp app={app} apiKey={apiKey} 
+                            styleClass="text-yellow-100"
+                            placeholder="عن ماذا تريد القصيدة؟ (مثال: القهوة، الشوق)"
+                            buttonText="انظم القصيدة"
+                            promptTemplate="اكتب أبيات شعرية قصيرة وموزونة عن: {input}"
+                            resultRenderer={text => <p className="whitespace-pre-line text-2xl text-center leading-loose text-yellow-400">{text}</p>}
+                        />
+                    </div>;
+                }
+                
+                if (app.id === 'roast') { // The Roaster
+                    return <div className="h-full bg-red-950 text-white font-cairo">
+                        <SimpleInputApp app={app} apiKey={apiKey}
+                            styleClass=""
+                            placeholder="اكتب جملة لتُقصف جبهتك..."
+                            buttonText="اقصف!"
+                            promptTemplate="رد برد ساخر ومضحك جداً (قصف جبهة) على: {input}"
+                            resultRenderer={text => <h1 className="text-3xl font-black text-center text-yellow-400">{text}</h1>}
+                        />
+                    </div>;
+                }
+
+                if (app.id === 'dreams') { // Ruya
+                    return <div className="h-full bg-indigo-950 text-purple-100 font-amiri">
+                        <SimpleInputApp app={app} apiKey={apiKey}
+                            styleClass=""
+                            placeholder="ماذا رأيت في منامك؟"
+                            buttonText="فسر الرؤيا"
+                            promptTemplate="فسر هذا الحلم باختصار وأسلوب مريح: {input}"
+                            resultRenderer={text => <p className="text-xl leading-loose text-justify">{text}</p>}
+                        />
+                    </div>;
+                }
+
+                if (app.id === 'cooking') { // Home Chef
+                    return <div className="h-full bg-orange-50 text-orange-900 font-cairo">
+                        <SimpleInputApp app={app} apiKey={apiKey}
+                            styleClass="text-orange-900"
+                            inputType="input"
+                            placeholder="المكونات (دجاج، طماطم...)"
+                            buttonText="ابتكر طبخة"
+                            promptTemplate="اقترح وصفة طبخ مبتكرة باستخدام: {input}. اذكر الاسم والطريقة باختصار."
+                            resultRenderer={text => <p className="whitespace-pre-line text-lg font-medium">{text}</p>}
+                        />
+                    </div>;
+                }
+
+                if (app.id === 'mars') { // Mars Colonist (Simplified)
+                    return <div className="h-full bg-black text-green-400 font-hud p-6 flex flex-col items-center justify-center">
+                        <div className="border border-green-500 p-8 rounded max-w-2xl w-full bg-green-900/10">
+                            <h2 className="text-2xl mb-4 uppercase tracking-widest">MARS_TERMINAL_V1</h2>
+                            <p className="mb-6 text-lg">ALERT: Dust storm approaching sector 7. Oxygen levels dropping.</p>
+                            <div className="grid gap-4">
+                                <button className="border border-green-500 p-3 hover:bg-green-500 hover:text-black transition-colors text-left">> Initiate Lockdown</button>
+                                <button className="border border-green-500 p-3 hover:bg-green-500 hover:text-black transition-colors text-left">> Deploy Drones</button>
+                            </div>
+                            <p className="mt-4 text-xs opacity-50">* This is a preview of the full simulation *</p>
+                        </div>
+                    </div>;
+                }
+
+                // Default Generic View for others to save space, but styled
+                return (
+                    <div className={`h-full font-sans flex flex-col items-center justify-center bg-gradient-to-br ${app.color} p-6`}>
+                        <div className="bg-white/20 backdrop-blur-xl rounded-3xl p-8 max-w-2xl w-full shadow-2xl border border-white/30 text-white">
+                            <app.icon className="w-16 h-16 mb-4 mx-auto opacity-80" />
+                            <h2 className="text-4xl font-bold mb-2 text-center">{app.name}</h2>
+                            <p className="text-center opacity-80 mb-8">{app.desc}</p>
+                            
+                            <SimpleInputApp app={app} apiKey={apiKey}
+                                styleClass=""
+                                placeholder="أدخل النص أو السؤال هنا..."
+                                buttonText="إرسال للذكاء الاصطناعي"
+                                promptTemplate={`أنت تطبيق "${app.name}". قم بمعالجة المدخل التالي بذكاء وإبداع: {input}`}
+                                resultRenderer={text => <p className="text-xl font-medium leading-relaxed whitespace-pre-wrap">{text}</p>}
+                            />
+                        </div>
+                    </div>
+                );
+            };
+
+            return (
+                <div className="min-h-screen bg-galaxy-bg text-white font-sans relative overflow-hidden flex flex-col">
+                    
+                    {/* Global Background */}
+                    <div className="stars-bg">
+                        {stars.map(s => <div key={s.id} className="star" style={{left: `${s.left}%`, top: `${s.top}%`, width: `${s.size}px`, height: `${s.size}px`, '--duration': `${s.dur}s`}} />)}
+                    </div>
+
+                    {/* Navbar */}
+                    <header className="px-6 py-4 flex justify-between items-center bg-galaxy-card/80 backdrop-blur-md border-b border-white/5 z-50 sticky top-0">
+                        <div className="flex items-center gap-3 cursor-pointer" onClick={() => setActiveAppId(null)}>
+                            <div className="w-10 h-10 bg-gradient-to-tr from-purple-600 to-blue-500 rounded-xl flex items-center justify-center shadow-lg animate-pulse-glow">
+                                <Grid className="w-6 h-6 text-white" />
+                            </div>
+                            <div>
+                                <h1 className="text-xl font-bold font-scifi tracking-wider">GALAXY <span className="text-purple-400">AI</span></h1>
+                            </div>
+                        </div>
+                        <button onClick={() => setShowSettings(true)} className="p-2 hover:bg-white/10 rounded-full transition-colors">
+                            <Settings className="w-6 h-6 text-gray-400" />
+                        </button>
+                    </header>
+
+                    {/* Settings Modal */}
+                    {showSettings && (
+                        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur p-4">
+                            <div className="bg-galaxy-card border border-white/10 p-6 rounded-2xl w-full max-w-md shadow-2xl">
+                                <h3 className="text-xl font-bold mb-4">الإعدادات العامة</h3>
+                                <label className="block text-sm text-gray-400 mb-2">مفتاح الذكاء (API Key)</label>
+                                <input 
+                                    type="password" 
+                                    value={apiKey} 
+                                    onChange={(e) => saveKey(e.target.value)}
+                                    className="w-full bg-black/50 border border-white/20 rounded-lg p-3 outline-none focus:border-purple-500"
+                                    placeholder="ألصق المفتاح هنا ليعمل مع كل التطبيقات"
+                                />
+                                <button onClick={() => setShowSettings(false)} className="mt-6 w-full bg-purple-600 hover:bg-purple-700 py-3 rounded-lg font-bold">حفظ وإغلاق</button>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Main Content */}
+                    <main className="flex-1 relative overflow-hidden">
+                        
+                        {/* Home Screen (App Grid) */}
+                        <div className={`absolute inset-0 overflow-y-auto p-6 transition-all duration-500 ${activeAppId ? 'opacity-0 pointer-events-none scale-95' : 'opacity-100 scale-100'}`}>
+                            <div className="max-w-6xl mx-auto">
+                                <div className="text-center mb-12 mt-8">
+                                    <h2 className="text-4xl md:text-6xl font-black mb-4 bg-clip-text text-transparent bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 font-scifi">
+                                        كل شيء في مكان واحد
+                                    </h2>
+                                    <p className="text-gray-400 text-lg">اختر وجهتك في عالم الذكاء الاصطناعي</p>
+                                </div>
+
+                                {['tools', 'advisor', 'fun', 'game'].map(cat => (
+                                    <div key={cat} className="mb-10">
+                                        <h3 className="text-xl font-bold mb-4 text-gray-500 uppercase tracking-widest px-2 border-r-4 border-purple-500">
+                                            {cat === 'tools' ? 'أدوات ذكية' : cat === 'advisor' ? 'مستشارون' : cat === 'fun' ? 'تسلية وضحك' : 'ألعاب وتحديات'}
+                                        </h3>
+                                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                                            {APPS.filter(a => a.category === cat).map(app => (
+                                                <button 
+                                                    key={app.id}
+                                                    onClick={() => setActiveAppId(app.id)}
+                                                    className="app-icon group bg-galaxy-card hover:bg-white/5 border border-white/5 p-4 rounded-3xl text-right transition-all hover:-translate-y-1 hover:shadow-2xl relative overflow-hidden"
+                                                >
+                                                    <div className={`absolute inset-0 bg-gradient-to-br ${app.color} opacity-0 group-hover:opacity-10 transition-opacity`}></div>
+                                                    <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${app.color} flex items-center justify-center mb-4 shadow-lg group-hover:scale-110 transition-transform`}>
+                                                        <app.icon className={`w-6 h-6 ${app.textColor || 'text-white'}`} />
+                                                    </div>
+                                                    <h4 className="font-bold text-lg mb-1">{app.name}</h4>
+                                                    <p className="text-xs text-gray-500">{app.desc}</p>
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Active App Container */}
+                        <div className={`absolute inset-0 transition-all duration-500 bg-galaxy-bg z-20 ${activeAppId ? 'translate-x-0' : 'translate-x-full'}`}>
+                            {activeAppId && (
+                                <>
+                                    <button 
+                                        onClick={() => setActiveAppId(null)}
+                                        className="absolute top-4 right-4 z-50 bg-black/50 backdrop-blur px-4 py-2 rounded-full border border-white/20 hover:bg-white/20 transition-all flex items-center gap-2 text-sm font-bold"
+                                    >
+                                        <ArrowRight className="w-4 h-4" /> خروج
+                                    </button>
+                                    {renderActiveApp()}
+                                </>
+                            )}
+                        </div>
+
+                    </main>
+                </div>
+            );
+        }
+
+        const root = createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
